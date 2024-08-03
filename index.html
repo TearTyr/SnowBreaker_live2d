@@ -42,6 +42,12 @@ var jitterEffect = new spine.JitterEffect(20, 20);
 var swirlTime = 0;
 var skeletonScale = document.getElementById('scale');
 
+var isDragging = false;
+var lastMouseX = 0;
+var lastMouseY = 0;
+var offsetX = 0;
+var offsetY = 0;
+
 
 
 function init () {
@@ -50,6 +56,9 @@ function init () {
 	canvas = document.getElementById("canvas");
 	canvas.width = window.innerWidth;
 	canvas.height = window.innerHeight;
+
+
+
 	var config = { alpha: false };
 	gl = canvas.getContext("webgl", config) || canvas.getContext("experimental-webgl", config);
 	if (!gl) {
@@ -100,6 +109,10 @@ function load () {
 	} else {
 		requestAnimationFrame(load);
 	}
+
+	canvas.addEventListener('mousedown', onMouseDown);
+	canvas.addEventListener('mouseup', onMouseUp);
+	canvas.addEventListener('mouseleave', onMouseUp);
 }
 
 function loadSkeleton2(name, initialAnimation, premultipliedAlpha, skin) {
@@ -396,8 +409,10 @@ function resize () {
 
 	// Calculations to center the skeleton in the canvas.
 	var bounds = skeletons[activeSkeleton].bounds;
-	var centerX = bounds.offset.x + bounds.size.x / 2;
-	var centerY = bounds.offset.y + bounds.size.y / 2;
+	// var centerX = bounds.offset.x + bounds.size.x / 2;
+	// var centerY = bounds.offset.y + bounds.size.y / 2;
+	var centerX = bounds.offset.x + bounds.size.x / 2 - offsetX*skeletonScale.value; // 应用偏移量
+    var centerY = bounds.offset.y + bounds.size.y / 2 + offsetY*skeletonScale.value; // 应用偏移量
 	var scaleX = bounds.size.x / canvas.width;
 	var scaleY = bounds.size.y / canvas.height;
 	var scale = Math.max(scaleX, scaleY) * 1.2;
@@ -417,12 +432,46 @@ function updateScale() {
 	console.log("scale:"+scaleFactor)
     skeletons[activeSkeleton].skeleton.scaleX = scaleFactor
 	skeletons[activeSkeleton].skeleton.scaleY = scaleFactor
-	console.log(skeletons[activeSkeleton].skeleton)
-	console.log(skeletons[activeSkeleton])
+	// console.log(skeletons[activeSkeleton].skeleton)
+	// console.log(skeletons[activeSkeleton])
+	for(var skeletonName in skeletons){
+		skeletons[skeletonName].skeleton.scaleX = scaleFactor
+		skeletons[skeletonName].skeleton.scaleY = scaleFactor
+		
+	}
+	
 	// setupAnimationUI();
 	// setupSkinUI();
 	
 }
+
+function onMouseDown(event) {
+    isDragging = true;
+    lastMouseX = event.clientX;
+    lastMouseY = event.clientY;
+    canvas.addEventListener('mousemove', onMouseMove);
+}
+
+function onMouseMove(event) {
+	
+    if (isDragging) {
+        var deltaX = event.clientX - lastMouseX;
+        var deltaY = event.clientY - lastMouseY;
+        offsetX += deltaX;
+        offsetY += deltaY;
+        lastMouseX = event.clientX;
+        lastMouseY = event.clientY;
+        resize();
+		// console.log(offsetX+" "+offsetY +" " +lastMouseX +" "+ lastMouseY + " ")
+    }
+
+}
+
+function onMouseUp(event) {
+    isDragging = false;
+    canvas.removeEventListener('mousemove', onMouseMove);
+}
+
 init();
 
 </script>
