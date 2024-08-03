@@ -118,7 +118,6 @@ function load () {
 function loadSkeleton2(name, initialAnimation, premultipliedAlpha, skin) {
     if (skin === undefined) skin = "default";
 
-    // 确保正确加载Atlas文件
     var atlasPath = "assets/" + name.replace("-ess", "").replace("-pro", "") + (premultipliedAlpha ? "-pma" : "") + ".atlas";
     console.log("Loading atlas from:", atlasPath);
     var atlas = assetManager.get(atlasPath);
@@ -128,13 +127,10 @@ function loadSkeleton2(name, initialAnimation, premultipliedAlpha, skin) {
         return;
     }
 
-    // 创建AtlasAttachmentLoader
     var atlasLoader = new spine.AtlasAttachmentLoader(atlas);
 
-    // 创建SkeletonJson实例
     var skeletonJson = new spine.SkeletonJson(atlasLoader);
 
-    // 设置解析时的缩放比例
 	// skeleton.scale = 1;
     skeletonJson.scale = parseFloat(skeletonScale.value); // new
     var jsonPath = "assets/" + name + ".json";
@@ -411,8 +407,9 @@ function resize () {
 	var bounds = skeletons[activeSkeleton].bounds;
 	// var centerX = bounds.offset.x + bounds.size.x / 2;
 	// var centerY = bounds.offset.y + bounds.size.y / 2;
-	var centerX = bounds.offset.x + bounds.size.x / 2 - offsetX*skeletonScale.value; // 应用偏移量
-    var centerY = bounds.offset.y + bounds.size.y / 2 + offsetY*skeletonScale.value; // 应用偏移量
+	var centerX = bounds.offset.x + bounds.size.x / 2 - 3*offsetX*(7-skeletonScale.value); // apply offset
+    var centerY = bounds.offset.y + bounds.size.y / 2 + 3*offsetY*(7-skeletonScale.value); // apply offset
+
 	var scaleX = bounds.size.x / canvas.width;
 	var scaleY = bounds.size.y / canvas.height;
 	var scale = Math.max(scaleX, scaleY) * 1.2;
@@ -421,8 +418,6 @@ function resize () {
 	}
 	var width = canvas.width * scale;
 	var height = canvas.height * scale;
-	// var scaleValue = 5 - parseFloat(skeletonScale.value); // 获取当前缩放值
-	// mvp.ortho2d(centerX - (width / 2) * scaleValue, centerY - (height / 2) * scaleValue, width * scaleValue, height * scaleValue);
 	mvp.ortho2d(centerX - width / 2, centerY - height / 2, width, height);
 	gl.viewport(0, 0, canvas.width, canvas.height);
 }
