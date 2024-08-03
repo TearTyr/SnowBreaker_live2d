@@ -1,6 +1,7 @@
 <html>
 <script src="/runtime/spine-webgl.js"></script>
 <script src="https://code.jquery.com/jquery-3.1.0.min.js"></script>
+<link rel="stylesheet" href="/stylesheet/spine-player.css">
 <style>
 * { margin: 0; padding: 0; }
 body, html { height: 100% }
@@ -13,8 +14,11 @@ canvas { position: absolute; width: 100% ;height: 100%; }
 <span>Skeleton:</span><select id="skeletonList"></select>
 <span>Animation:</span><select id="animationList"></select>
 <span>Skin:</span><select id="skinList"></select>
-<span>Vertex Effect:</span><select id="effectList"></select>
+<!-- <span>Vertex Effect:</span><select id="effectList"></select> -->
 <span>Debug:</span><input type="checkbox" id="debug">
+<span>Scale:</span><input type="range" id="scale" value="1" min="0" max="5" step="0.2" onchange="updateScale()">
+
+
 </div>
 </center>
 <script>
@@ -36,6 +40,9 @@ var activeSkeleton = "sp_girl002b_02_gacha";
 var swirlEffect = new spine.SwirlEffect(0);
 var jitterEffect = new spine.JitterEffect(20, 20);
 var swirlTime = 0;
+var skeletonScale = document.getElementById('scale');
+
+
 
 function init () {
 	// Setup canvas and WebGL context. We pass alpha: false to canvas.getContext() so we don't use premultiplied alpha when
@@ -69,36 +76,24 @@ function init () {
 
 	// Tell AssetManager to load the resources for each skeleton, including the exported .skel file, the .atlas file and the .png
 	// file for the atlas. We then wait until all resources are loaded in the load() method.
-	// assetManager.loadBinary("assets/spineboy-pro.skel");
-	// assetManager.loadTextureAtlas("assets/spineboy-pma.atlas");
-	// assetManager.loadBinary("assets/raptor-pro.skel");
-	// assetManager.loadTextureAtlas("assets/raptor-pma.atlas");
-	// assetManager.loadBinary("assets/tank-pro.skel");
-	// assetManager.loadTextureAtlas("assets/tank-pma.atlas");
-	// assetManager.loadBinary("assets/goblins-pro.skel");
-	// assetManager.loadTextureAtlas("assets/goblins-pma.atlas");
-	// assetManager.loadBinary("assets/vine-pro.skel");
-	// assetManager.loadTextureAtlas("assets/vine-pma.atlas");
-	// assetManager.loadBinary("assets/stretchyman-pro.skel");
-	// assetManager.loadTextureAtlas("assets/stretchyman-pma.atlas");
-	// assetManager.loadBinary("assets/coin-pro.skel");
-	// assetManager.loadTextureAtlas("assets/coin-pma.atlas");
 	assetManager.loadText("assets/sp_girl002b_02_gacha.json")
 	assetManager.loadTextureAtlas("assets/sp_girl002b_02_gacha.atlas")
+	assetManager.loadText("assets/sp_girl002b_gacha.json")
+	assetManager.loadTextureAtlas("assets/sp_girl002b_gacha.atlas")
+	assetManager.loadText("assets/sp_girl002b_gacha.json")
+	assetManager.loadTextureAtlas("assets/sp_girl002b_gacha.atlas")
+	assetManager.loadText("assets/sp_girl002b.json")
+	assetManager.loadTextureAtlas("assets/sp_girl002b.atlas")
+
 	requestAnimationFrame(load);
 }
 
 function load () {
 	// Wait until the AssetManager has loaded all resources, then load the skeletons.
 	if (assetManager.isLoadingComplete()) {
-		// skeletons["raptor"] = loadSkeleton("raptor-pro", "walk", true);
-		// skeletons["spineboy"] = loadSkeleton("spineboy-pro", "run", true);
-		// skeletons["tank"] = loadSkeleton("tank-pro", "drive", true);
-		// skeletons["goblins"] = loadSkeleton("goblins-pro", "walk", true, "goblin");
-		// skeletons["vine"] = loadSkeleton("vine-pro", "grow", true);
-		// skeletons["stretchyman"] = loadSkeleton("stretchyman-pro", "sneak", true);
-		// skeletons["coin"] = loadSkeleton("coin-pro", "animation", true);
 		skeletons['sp_girl002b_02_gacha'] = loadSkeleton2("sp_girl002b_02_gacha", "sp_girl002b_02_gachastand", false)
+		skeletons['sp_girl002b_gacha'] = loadSkeleton2("sp_girl002b_gacha", "sp_girl002b_gachastand", false)
+		skeletons['sp_girl002b'] = loadSkeleton2("sp_girl002b", "sp_girl002b_bunai", false)
 		setupUI();
 		lastFrameTime = Date.now() / 1000;
 		requestAnimationFrame(render); // Loading is done, call render every frame.
@@ -127,7 +122,8 @@ function loadSkeleton2(name, initialAnimation, premultipliedAlpha, skin) {
     var skeletonJson = new spine.SkeletonJson(atlasLoader);
 
     // 设置解析时的缩放比例
-    skeletonJson.scale = 1;
+	// skeleton.scale = 1;
+    skeletonJson.scale = parseFloat(skeletonScale.value); // new
     var jsonPath = "assets/" + name + ".json";
     console.log("Loading JSON from:", jsonPath);
     var jsonData = assetManager.get(jsonPath);
@@ -158,6 +154,8 @@ function loadSkeleton2(name, initialAnimation, premultipliedAlpha, skin) {
     }
 
     // 添加动画状态监听器
+	skeletonScale.addEventListener('input', updateScale);
+
     animationState.addListener({
         start: function(track) {
             console.log("Animation on track " + track.trackIndex + " started");
@@ -262,20 +260,17 @@ function setupUI () {
 		if (skeletonName === activeSkeleton) option.attr("selected", "selected");
 		skeletonList.append(option);
 	}
-	var effectList = $("#effectList");
-	var effects = ["None", "Swirl", "Jitter"];
-	for (var effect in effects) {
-		var effectName = effects[effect];
-		var option = $("<option></option>");
-		option.attr("value", effectName).text(effectName);
-		effectList.append(option);
-	}
+	// var effectList = $("#effectList");
+	// var effects = ["None", "Swirl", "Jitter"];
+	// for (var effect in effects) {
+	// 	var effectName = effects[effect];
+	// 	var option = $("<option></option>");
+	// 	option.attr("value", effectName).text(effectName);
+	// 	effectList.append(option);
+	// }
 	var setupAnimationUI = function() {
 		var animationList = $("#animationList");
 		animationList.empty();
-		console.log(skeletons[activeSkeleton])
-		console.log(skeletons[activeSkeleton].state)
-
 		var skeleton = skeletons[activeSkeleton].skeleton;
 		var state = skeletons[activeSkeleton].state;
 		var activeAnimation = state.tracks[0].animation.name;
@@ -406,14 +401,28 @@ function resize () {
 	var scaleX = bounds.size.x / canvas.width;
 	var scaleY = bounds.size.y / canvas.height;
 	var scale = Math.max(scaleX, scaleY) * 1.2;
-	if (scale < 1) scale = 1;
+	if (scale < 1) {
+		scale = 1;
+	}
 	var width = canvas.width * scale;
 	var height = canvas.height * scale;
-
+	// var scaleValue = 5 - parseFloat(skeletonScale.value); // 获取当前缩放值
+	// mvp.ortho2d(centerX - (width / 2) * scaleValue, centerY - (height / 2) * scaleValue, width * scaleValue, height * scaleValue);
 	mvp.ortho2d(centerX - width / 2, centerY - height / 2, width, height);
 	gl.viewport(0, 0, canvas.width, canvas.height);
 }
 
+function updateScale() {
+    var scaleFactor = parseFloat(skeletonScale.value);
+	console.log("scale:"+scaleFactor)
+    skeletons[activeSkeleton].skeleton.scaleX = scaleFactor
+	skeletons[activeSkeleton].skeleton.scaleY = scaleFactor
+	console.log(skeletons[activeSkeleton].skeleton)
+	console.log(skeletons[activeSkeleton])
+	// setupAnimationUI();
+	// setupSkinUI();
+	
+}
 init();
 
 </script>
