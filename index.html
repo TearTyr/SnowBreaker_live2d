@@ -16,7 +16,7 @@ canvas { position: absolute; width: 100% ;height: 100%; }
 <span>Skin:</span><select id="skinList"></select>
 <!-- <span>Vertex Effect:</span><select id="effectList"></select> -->
 <span>Debug:</span><input type="checkbox" id="debug">
-<span>Scale:</span><input type="range" id="scale" value="1" min="0" max="5" step="0.2" onchange="updateScale()">
+<span>Scale:</span><input type="range" id="scale" value="1" min="0.1" max="10" step="any" onchange="updateScale()">
 
 
 </div>
@@ -41,6 +41,10 @@ var swirlEffect = new spine.SwirlEffect(0);
 var jitterEffect = new spine.JitterEffect(20, 20);
 var swirlTime = 0;
 var skeletonScale = document.getElementById('scale');
+console.log(parseFloat(skeletonScale.value)+ " " +parseFloat(skeletonScale.min)+" "+parseFloat(skeletonScale.max))
+
+var org_offsetX = 0
+var org_offsetY = 0
 
 var isDragging = false;
 var lastMouseX = 0;
@@ -110,6 +114,7 @@ function load () {
 		requestAnimationFrame(load);
 	}
 
+	canvas.addEventListener('wheel', onWheel)
 	canvas.addEventListener('mousedown', onMouseDown);
 	canvas.addEventListener('mouseup', onMouseUp);
 	canvas.addEventListener('mouseleave', onMouseUp);
@@ -147,6 +152,10 @@ function loadSkeleton2(name, initialAnimation, premultipliedAlpha, skin) {
     var skeleton = new spine.Skeleton(skeletonData);
     skeleton.setSkinByName(skin);
     var bounds = calculateSetupPoseBounds(skeleton);
+	// bounds.offset.x = 0;
+	// bounds.offset.y = 0;
+	// bounds.size.x = 1500;
+	// bounds.size.y = 1500;
 
     // 创建并设置AnimationState
     var animationStateData = new spine.AnimationStateData(skeleton.data);
@@ -358,21 +367,21 @@ function render () {
 	// Start the batch and tell the SkeletonRenderer to render the active skeleton.
 	batcher.begin(shader);
 
-	var effect = $("#effectList option:selected").text();
-	if (effect == "None") {
-		skeletonRenderer.vertexEffect = null;
-	} else if (effect == "Swirl") {
-		swirlTime += delta;
-		var percent = swirlTime % 2;
-		if (percent > 1) percent = 1 - (percent -1 );
-		swirlEffect.angle = 120 * percent - 60;
-		swirlEffect.centerX = bounds.offset.x + bounds.size.x / 2;
-		swirlEffect.centerY = bounds.offset.y + bounds.size.y / 2;
-		swirlEffect.radius = Math.sqrt(bounds.size.x * bounds.size.x + bounds.size.y * bounds.size.y);
-		skeletonRenderer.vertexEffect = swirlEffect;
-	} else if (effect == "Jitter") {
-		skeletonRenderer.vertexEffect = jitterEffect;
-	}
+	// var effect = $("#effectList option:selected").text();
+	// if (effect == "None") {
+	// 	skeletonRenderer.vertexEffect = null;
+	// } else if (effect == "Swirl") {
+	// 	swirlTime += delta;
+	// 	var percent = swirlTime % 2;
+	// 	if (percent > 1) percent = 1 - (percent -1 );
+	// 	swirlEffect.angle = 120 * percent - 60;
+	// 	swirlEffect.centerX = bounds.offset.x + bounds.size.x / 2;
+	// 	swirlEffect.centerY = bounds.offset.y + bounds.size.y / 2;
+	// 	swirlEffect.radius = Math.sqrt(bounds.size.x * bounds.size.x + bounds.size.y * bounds.size.y);
+	// 	skeletonRenderer.vertexEffect = swirlEffect;
+	// } else if (effect == "Jitter") {
+	// 	skeletonRenderer.vertexEffect = jitterEffect;
+	// }
 
 	skeletonRenderer.premultipliedAlpha = premultipliedAlpha;
 	skeletonRenderer.draw(batcher, skeleton);
@@ -407,8 +416,8 @@ function resize () {
 	var bounds = skeletons[activeSkeleton].bounds;
 	// var centerX = bounds.offset.x + bounds.size.x / 2;
 	// var centerY = bounds.offset.y + bounds.size.y / 2;
-	var centerX = bounds.offset.x + bounds.size.x / 2 - 3*offsetX*(7-skeletonScale.value); // apply offset
-    var centerY = bounds.offset.y + bounds.size.y / 2 + 3*offsetY*(7-skeletonScale.value); // apply offset
+	var centerX = bounds.offset.x + bounds.size.x / 2; // apply offset
+    var centerY = bounds.offset.y + bounds.size.y / 2; // apply offset
 
 	var scaleX = bounds.size.x / canvas.width;
 	var scaleY = bounds.size.y / canvas.height;
@@ -418,6 +427,8 @@ function resize () {
 	}
 	var width = canvas.width * scale;
 	var height = canvas.height * scale;
+
+	
 	mvp.ortho2d(centerX - width / 2, centerY - height / 2, width, height);
 	gl.viewport(0, 0, canvas.width, canvas.height);
 }
@@ -441,30 +452,56 @@ function updateScale() {
 }
 
 function onMouseDown(event) {
+	org_offsetX = parseFloat(skeletons[activeSkeleton].bounds.offset.x);
+	org_offestY = parseFloat(skeletons[activeSkeleton].bounds.offset.y);
+	console.log(skeletons[activeSkeleton].bounds)
+
     isDragging = true;
     lastMouseX = event.clientX;
     lastMouseY = event.clientY;
+	
     canvas.addEventListener('mousemove', onMouseMove);
 }
 
 function onMouseMove(event) {
-	
-    if (isDragging) {
-        var deltaX = event.clientX - lastMouseX;
-        var deltaY = event.clientY - lastMouseY;
+	if (isDragging) {
+        let deltaX = event.clientX - lastMouseX;
+        let deltaY = event.clientY - lastMouseY;
         offsetX += deltaX;
         offsetY += deltaY;
         lastMouseX = event.clientX;
         lastMouseY = event.clientY;
-        resize();
-		// console.log(offsetX+" "+offsetY +" " +lastMouseX +" "+ lastMouseY + " ")
-    }
+		// skeletons[activeSkeleton].bounds.offset.x = org_offsetX + deltaX
+		// skeletons[activeSkeleton].bounds.offset.y = org_offsetY + deltaY
+		// console.log(skeletons[activeSkeleton].bounds)
 
+        // resize();
+    }
 }
 
 function onMouseUp(event) {
     isDragging = false;
     canvas.removeEventListener('mousemove', onMouseMove);
+}
+
+function onWheel(event) {
+    console.log("wheel:" + event.deltaX + " " + event.deltaY);
+
+    let scaleValue = parseFloat(skeletonScale.value);
+    let scaleMin = parseFloat(skeletonScale.min);
+    let scaleMax = parseFloat(skeletonScale.max);
+    let deltaY = parseFloat(event.deltaY);
+
+    console.log(scaleValue + " " + scaleMin + " " + scaleMax);
+
+    if (deltaY < 0 && (scaleValue + 0.1) <= scaleMax) {
+        skeletonScale.value = scaleValue + 0.1;
+		console.log(skeletonScale.value);
+    } else if (deltaY > 0 && (scaleValue - 0.1) >= scaleMin) {
+        skeletonScale.value = scaleValue - 0.1;
+		// console.log(skeletonScale.value);
+    }
+    updateScale();
 }
 
 init();
